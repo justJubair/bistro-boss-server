@@ -1,17 +1,13 @@
-const express = require("express")
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const cors = require("cors")
-require('dotenv').config()
-const app = express()
+const express = require("express");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const cors = require("cors");
+require("dotenv").config();
+const app = express();
 const port = process.env.PORT || 5000;
 
-
 // middlewares
-app.use(cors())
-app.use(express.json())
-
-
-
+app.use(cors());
+app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_KEY}@cluster0.hf0b3tt.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -21,7 +17,7 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
@@ -30,31 +26,39 @@ async function run() {
     await client.connect();
 
     // Database Collections START
-    const menusCollection = client.db("bistroBossDB").collection("menus")
-    const cartsCollection = client.db("bistroBossDB").collection("carts")
+    const menusCollection = client.db("bistroBossDB").collection("menus");
+    const cartsCollection = client.db("bistroBossDB").collection("carts");
     // Database Collections ENDS
 
+    // GET cart with user email query
+    app.get("/api/v1/carts", async (req, res) => {
+      const query = { userEmail: req?.query?.email };
+      const result = await cartsCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // POST an item into cart
-    app.post("/api/v1/carts", async(req,res)=>{
+    app.post("/api/v1/carts", async (req, res) => {
       const cart = req?.body;
       const result = await cartsCollection.insertOne(cart);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // GET menus with or without category query
-    app.get("/api/v1/menus", async(req, res)=>{
-        let query = {};
-        if(req.query?.category){
-          query = {category: req.query.category}
-        }
-        const result = await menusCollection.find(query).toArray()
-        res.send(result)
-    })
+    app.get("/api/v1/menus", async (req, res) => {
+      let query = {};
+      if (req.query?.category) {
+        query = { category: req.query.category };
+      }
+      const result = await menusCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -62,13 +66,10 @@ async function run() {
 }
 run().catch(console.dir);
 
+app.get("/", (req, res) => {
+  res.send("Bistro Boss is Running");
+});
 
-
-app.get("/", (req,res)=>{
-    res.send("Bistro Boss is Running")
-})
-
-app.listen(port, ()=>{
-    console.log(`Server is running on ${port}`)
-})
-
+app.listen(port, () => {
+  console.log(`Server is running on ${port}`);
+});
