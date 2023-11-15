@@ -31,7 +31,16 @@ async function run() {
 
     // Database Collections START
     const menusCollection = client.db("bistroBossDB").collection("menus")
+    const cartsCollection = client.db("bistroBossDB").collection("carts")
     // Database Collections ENDS
+
+
+    // POST an item into cart
+    app.post("/api/v1/carts", async(req,res)=>{
+      const cart = req?.body;
+      const result = await cartsCollection.insertOne(cart);
+      res.send(result)
+    })
 
     // GET menus with or without category query
     app.get("/api/v1/menus", async(req, res)=>{
