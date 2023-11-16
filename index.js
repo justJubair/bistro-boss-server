@@ -46,29 +46,68 @@ async function run() {
     });
 
     // DELETE an item from cart
-    app.delete("/api/v1/carts/:id", async(req,res)=>{
+    app.delete("/api/v1/carts/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
-      const result = await cartsCollection.deleteOne(query)
-      res.send(result)
-    })
+      const query = { _id: new ObjectId(id) };
+      const result = await cartsCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // GET menus with or without category query
     app.get("/api/v1/menus", async (req, res) => {
       let query = {};
       if (req.query?.category) {
-        query = { category: req.query.category }; 
+        query = { category: req.query.category };
       }
       const result = await menusCollection.find(query).toArray();
       res.send(result);
     });
 
+    // GET all the users
+    app.get("/api/v1/users", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
     // POST an user when registered
-    app.post("/api/v1/users", async(req,res)=>{
+    app.post("/api/v1/users", async (req, res) => {
       const user = req?.body;
+      // check if user already exists
+      const query = { email: user?.email };
+      const isExist = await usersCollection.findOne(query);
+      if (isExist) {
+        return res.send({ message: "user already exists", insertedId: null });
+      }
       const result = await usersCollection.insertOne(user);
-      res.send(result)
-    })
+      res.send(result);
+    });
+
+    // PATCH: update users role to admin
+    app.patch("/api/v1/users/:id", async (req, res) => {
+      const id = req?.params.id;
+      const usersRole = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          role: usersRole.role,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // DELETE an user from database
+    app.delete("/api/v1/users/:id", async (req, res) => {
+      const id = req?.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
