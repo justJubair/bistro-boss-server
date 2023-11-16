@@ -1,5 +1,6 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const jwt = require("jsonwebtoken");
 const cors = require("cors");
 require("dotenv").config();
 const app = express();
@@ -30,6 +31,49 @@ async function run() {
     const cartsCollection = client.db("bistroBossDB").collection("carts");
     const usersCollection = client.db("bistroBossDB").collection("users");
     // Database Collections ENDS
+
+    // JWT middlewares START
+    const verifyToken = (req, res, next)=>{
+     const token = req.headers.authorization.split(" ") [1]
+      if(!token){
+        return res.status(401).send({message: "unauthorized"})
+      }
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded)=>{
+        if(error){
+          return res.status(401).send({message: "unauthorized"})
+        }
+        req.user = decoded;
+        next()
+      }) 
+
+    }
+    // JWT middlewares ENDS
+
+
+    // JWT related api's START
+    app.post("/api/v1/jwt", async(req,res)=>{
+      const user = req.body;  
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h"
+      })
+      res.send({token})
+    })
+    // JWT related api's ENDS
+
+    // GET admin 
+    app.get("/api/v1/users/:email", verifyToken, async(req,res)=>{
+      const email = req.params.email;
+      if(email !== req.decoded.email){
+        return res.status(403).send({message: "forbidden access"})
+      }
+      const query = {email: email};
+      const user = await usersCollection.findOne(query)
+      let admin = false
+      if(user){
+        admin = user?.role=== "admin"
+      }
+      res.send({admin})
+    })
 
     // GET cart with user email query
     app.get("/api/v1/carts", async (req, res) => {
@@ -64,7 +108,8 @@ async function run() {
     });
 
     // GET all the users
-    app.get("/api/v1/users", async (req, res) => {
+    app.get("/api/v1/users",verifyToken, async (req, res) => {
+   
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
