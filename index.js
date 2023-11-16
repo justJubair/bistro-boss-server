@@ -42,7 +42,7 @@ async function run() {
         if(error){
           return res.status(401).send({message: "unauthorized"})
         }
-        req.user = decoded;
+        req.decoded = decoded;
        
         next()
       }) 
@@ -50,6 +50,17 @@ async function run() {
     }
     // JWT middlewares ENDS
 
+    // Verify admin middleware
+    const verifyAdmin = async(req, res, next)=>{
+      const email = req.decoded?.email
+      const query = {email: email};
+      const user = await usersCollection.findOne(query)
+      const isAdmin = user?.role === "admin"
+      if(!isAdmin){
+        return res.status(403).send({message: "forbidden"})
+      }
+      next()
+    }
 
     // JWT related api's START
     app.post("/api/v1/jwt", async(req,res)=>{
@@ -66,7 +77,7 @@ async function run() {
       const email = req.params?.email;
       
 
-      if(email !== req.user?.email){
+      if(email !== req.decoded?.email){
         return res.status(403).send({message: "forbidden access"})
       }
       const query = {email: email};
@@ -111,7 +122,7 @@ async function run() {
     });
 
     // GET all the users
-    app.get("/api/v1/users",verifyToken, async (req, res) => {
+    app.get("/api/v1/users",verifyToken, verifyAdmin, async (req, res) => {
    
       const result = await usersCollection.find().toArray();
       res.send(result);
@@ -131,7 +142,7 @@ async function run() {
     });
 
     // PATCH: update users role to admin
-    app.patch("/api/v1/users/:id", async (req, res) => {
+    app.patch("/api/v1/users/:id",verifyToken, verifyAdmin, async (req, res) => {
       const id = req?.params.id;
       const usersRole = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -150,7 +161,7 @@ async function run() {
     });
 
     // DELETE an user from database
-    app.delete("/api/v1/users/:id", async (req, res) => {
+    app.delete("/api/v1/users/:id",verifyToken, verifyAdmin, async (req, res) => {
       const id = req?.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
