@@ -43,6 +43,7 @@ async function run() {
           return res.status(401).send({message: "unauthorized"})
         }
         req.user = decoded;
+       
         next()
       }) 
 
@@ -62,8 +63,10 @@ async function run() {
 
     // GET admin 
     app.get("/api/v1/users/:email", verifyToken, async(req,res)=>{
-      const email = req.params.email;
-      if(email !== req.decoded.email){
+      const email = req.params?.email;
+      
+
+      if(email !== req.user?.email){
         return res.status(403).send({message: "forbidden access"})
       }
       const query = {email: email};
