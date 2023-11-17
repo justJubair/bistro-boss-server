@@ -121,10 +121,36 @@ async function run() {
       res.send(result);
     });
 
+    // GET a single menu item
+    app.get("/api/v1/menus/:id", async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await menusCollection.findOne(query)
+      res.send(result)
+    })
+
     // POST menu as an admin
     app.post("/api/v1/menus", async(req,res)=>{
       const newMenuItem = req?.body;
       const result = await menusCollection.insertOne(newMenuItem);
+      res.send(result)
+    })
+
+    // PUT; update a menu item as an admin
+    app.put("/api/v1/menus/:id", async(req, res)=>{
+      const id = req?.params.id;
+      const item = req?.body
+      const filter = {_id: new ObjectId(id)};
+      const updatedItem = {
+        $set: {
+          name: item.name,
+          price: item.price,
+          recipe: item.recipe,
+          image: item.image,
+          category: item.category
+        }
+      }
+      const result = await menusCollection.updateOne(filter, updatedItem)
       res.send(result)
     })
 
