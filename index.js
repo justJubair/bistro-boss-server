@@ -121,6 +121,21 @@ async function run() {
       res.send(result);
     });
 
+    // POST menu as an admin
+    app.post("/api/v1/menus", async(req,res)=>{
+      const newMenuItem = req?.body;
+      const result = await menusCollection.insertOne(newMenuItem);
+      res.send(result)
+    })
+
+    // DELETE a menu item
+    app.delete("/api/v1/menus/:id", async(req,res)=>{
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await menusCollection.deleteOne(query);
+      res.send(result);
+    })
+
     // GET all the users
     app.get("/api/v1/users",verifyToken, verifyAdmin, async (req, res) => {
    
