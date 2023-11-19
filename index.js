@@ -221,6 +221,9 @@ async function run() {
         currency: "usd",
         payment_method_types: ["card"]
       })
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
     })
 
     // Send a ping to confirm a successful connection
