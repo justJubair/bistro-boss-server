@@ -33,6 +33,7 @@ async function run() {
     const menusCollection = client.db("bistroBossDB").collection("menus");
     const cartsCollection = client.db("bistroBossDB").collection("carts");
     const usersCollection = client.db("bistroBossDB").collection("users");
+    const paymentsCollection = client.db("bistroBossDB").collection("payments");
     // Database Collections ENDS
 
     // JWT middlewares START
@@ -212,6 +213,7 @@ async function run() {
       res.send(result);
     });
 
+    // PAYMENT RELATED API'S START
     // payment intent
     app.post("/api/v1/create-payment-intent", async(req,res)=>{
       const {price} = req?.body;
@@ -227,6 +229,33 @@ async function run() {
         clientSecret: paymentIntent.client_secret
       })
     })
+
+    //GET; user base payment
+    app.get("/api/v1/payments/:email",verifyToken, async(req,res)=>{
+      const email = req?.params?.email
+      if(email !== req?.decoded.email){
+        return res.status(403).send({message: "forbidden access"})
+      }
+      const query = {email: email}
+      const result = await paymentsCollection.find(query).toArray()
+      res.send(result)
+
+    })
+
+    // POST; users payment
+    app.post("/api/v1/payments", async(req,res)=>{
+      const payment = req?.body
+      const paymentResult = await paymentsCollection.insertOne(payment) 
+     
+      const query = {_id: {
+        $in: payment.cartIds.map(id=> new ObjectId(id))
+      }}
+      const deleteResult = await cartsCollection.deleteMany(query)
+     
+
+      res.send({paymentResult, deleteResult})
+    })
+    // PAYMENT RELATED API'S ENDS
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
