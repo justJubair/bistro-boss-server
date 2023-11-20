@@ -257,6 +257,19 @@ async function run() {
     })
     // PAYMENT RELATED API'S ENDS
 
+    // GET admin related stats or analytics STARTS
+    app.get("/api/v1/adminStats", async(req,res)=>{
+      const users = await usersCollection.estimatedDocumentCount()
+      const menus = await menusCollection.estimatedDocumentCount()
+      const payments = await paymentsCollection.estimatedDocumentCount()
+      res.send({
+        users,
+        menus,
+        payments
+      })
+    })
+    // GET admin related stats or analytics ENDS
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
