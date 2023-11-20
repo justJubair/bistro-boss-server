@@ -231,12 +231,12 @@ async function run() {
     })
 
     //GET; user base payment
-    app.get("/api/v1/payments/:email",verifyToken, async(req,res)=>{
-      const email = req?.params?.email
-      if(email !== req?.decoded.email){
-        return res.status(403).send({message: "forbidden access"})
+    app.get("/api/v1/payments",async(req,res)=>{
+      let query = {}
+      if(req?.query?.email){
+        query = {email: req?.query?.email}
       }
-      const query = {email: email}
+
       const result = await paymentsCollection.find(query).toArray()
       res.send(result)
 
@@ -261,11 +261,21 @@ async function run() {
     app.get("/api/v1/adminStats", async(req,res)=>{
       const users = await usersCollection.estimatedDocumentCount()
       const menus = await menusCollection.estimatedDocumentCount()
-      const payments = await paymentsCollection.estimatedDocumentCount()
+      const result = await paymentsCollection.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalRevenue: {
+              $sum: "$price"
+            }
+          }
+        }
+      ]).toArray()
+      const revenue = result.length>0 ? result[0].totalRevenue : 0
       res.send({
         users,
         menus,
-        payments
+        revenue
       })
     })
     // GET admin related stats or analytics ENDS
