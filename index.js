@@ -245,6 +245,7 @@ async function run() {
     // POST; users payment
     app.post("/api/v1/payments", async(req,res)=>{
       const payment = req?.body
+      payment.menuIds = payment.menuIds.map(id=> new ObjectId(id))
       const paymentResult = await paymentsCollection.insertOne(payment) 
      
       const query = {_id: {
@@ -277,6 +278,27 @@ async function run() {
         menus,
         revenue
       })
+    })
+
+    // GET; category wise item quantity and revenue
+    app.get("/api/v1/orderStats", async(req,res)=>{
+      const result = await paymentsCollection.aggregate([
+        {
+          $unwind: "$menuIds"
+        },
+        {
+          $lookup:{
+            from: "menus",
+            localField: "menuIds",
+            foreignField: "_id",
+            as: "menuItems"
+          }
+
+        }
+       
+        
+      ]).toArray()
+      res.send(result)
     })
     // GET admin related stats or analytics ENDS
 
